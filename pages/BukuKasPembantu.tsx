@@ -185,56 +185,54 @@ const BukuKasPembantu: React.FC<BukuKasPembantuProps> = ({ bkpData, onSubmit, on
       </div>
 
       {/* Filters and Actions Row */}
-       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+       <div className="flex flex-col lg:flex-row justify-between items-center gap-3">
           {/* Filters Left Side - Narrow boxes */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-            <div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <select
                     value={filterCategory}
                     onChange={e => setFilterCategory(e.target.value)}
-                    className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm"
+                    className="w-full sm:w-32 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm"
                 >
                     <option value="">Semua Kategori</option>
                     {categories.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                     ))}
                 </select>
-            </div>
-            <div>
-               <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
+               <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-full sm:w-32 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
                     <option value="">Semua Bulan</option>
                     {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('id-ID', {month: 'long'})}</option>)}
                </select>
-            </div>
-            <div>
-               <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
+               <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="w-full sm:w-32 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
                     <option value="">Semua Tahun</option>
                     {uniqueYears.map(year => <option key={year} value={year}>{year}</option>)}
                </select>
-            </div>
           </div>
           
           {/* Action Buttons Right Side */}
-          <div className="flex items-center gap-2 w-full xl:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
               <input type="file" ref={fileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
               <button
                 onClick={handleImportClick}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg transition-colors duration-300"
+                title="Import Data"
               >
                 <Upload size={18} />
+                <span className="lg:hidden">Import</span>
               </button>
               <button
                 onClick={() => setIsExportModalOpen(true)}
-                className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+                className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-3 rounded-lg transition-colors duration-300"
+                title="Export Data"
               >
                 <Download size={18} />
+                <span className="lg:hidden">Export</span>
               </button>
               <button
                 onClick={handleOpenModalForNew}
-                className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+                className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 whitespace-nowrap"
               >
                 <Plus size={20} />
-                <span className="hidden sm:inline">Buat Data BKP Baru</span>
+                <span>Buat Data Baru</span>
               </button>
           </div>
        </div>

@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { PeminjamData, SetoranData, ManualPayment } from '../types';
 import { formatCurrency } from '../utils/formatters';
-import { CreditCard, Download, Upload } from 'lucide-react';
+import { CreditCard, Download, Upload, Printer } from 'lucide-react';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
 import Notification from '../components/shared/Notification';
 import { exportToExcel, importFromExcel } from '../utils/fileHandlers';
@@ -252,13 +253,61 @@ const DataPembayaranPeminjam: React.FC<DataPembayaranPeminjamProps> = ({ peminja
     }
   };
 
+  const handlePrint = () => {
+      window.print();
+  };
+
+  // Styles for printing
+  const printStyles = `
+      @media print {
+          body * {
+              visibility: hidden;
+          }
+          #printable-area, #printable-area * {
+              visibility: visible;
+          }
+          #printable-area {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              background-color: white;
+              color: black;
+              padding: 20px;
+              z-index: 9999;
+          }
+          .no-print {
+              display: none !important;
+          }
+          /* Override styling for print to look good on white paper */
+          .print-text-black {
+              color: black !important;
+          }
+          .print-bg-white {
+              background-color: white !important;
+          }
+          .print-border {
+             border: 1px solid #ddd !important;
+          }
+          /* Ensure table headers are visible */
+          thead th {
+              background-color: #f3f4f6 !important;
+              color: black !important;
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact;
+          }
+      }
+  `;
+
   return (
     <div className="bg-gray-900 p-4 sm:p-6 rounded-lg shadow-xl border border-gray-800 space-y-6">
+      <style>{printStyles}</style>
       <input type="file" ref={importFileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+      
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 no-print">
         <div className="flex items-center gap-3">
           <CreditCard className="h-8 w-8 text-teal-400" />
-          <h2 className="text-xl font-semibold text-white">Data Pembayaran Peminjam</h2>
+          <h2 className="text-xl font-semibold text-white">Status Pembayaran</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <select
@@ -288,14 +337,14 @@ const DataPembayaranPeminjam: React.FC<DataPembayaranPeminjamProps> = ({ peminja
         </div>
       </div>
       
-       <div className="flex justify-end items-center gap-2">
+       <div className="flex justify-end items-center gap-2 no-print">
            <button
             onClick={handleImportClick}
             disabled={!selectedPeminjamDetails}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload size={18} />
-            <span>Import Excel</span>
+            <span className="hidden sm:inline">Import Excel</span>
           </button>
           <button
             onClick={handleExportExcel}
@@ -303,60 +352,143 @@ const DataPembayaranPeminjam: React.FC<DataPembayaranPeminjamProps> = ({ peminja
             className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download size={18} />
-             <span>Export Excel</span>
+             <span className="hidden sm:inline">Export Excel</span>
+          </button>
+          <button
+            onClick={handlePrint}
+            disabled={!selectedPeminjamDetails}
+            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Printer size={18} />
+             <span>Cetak / PDF</span>
           </button>
         </div>
 
       {selectedPeminjamDetails ? (
-        <div className="space-y-6 animate-fade-in-up">
+        <div id="printable-area" className="space-y-6 animate-fade-in-up print-bg-white print-text-black">
+          {/* Print-only Header */}
+          <div className="hidden print:block mb-8 border-b-2 border-gray-800 pb-4">
+             <div className="flex items-center gap-4 mb-2">
+                 {/* Simple placeholder logo/icon */}
+                 <div className="bg-teal-600 rounded-full p-2 h-12 w-12 flex items-center justify-center">
+                    <span className="text-white font-bold text-xl">TL</span>
+                 </div>
+                 <div>
+                    <h1 className="text-2xl font-bold text-black">Data Desa Tiga Likur</h1>
+                    <p className="text-sm text-gray-600">Laporan Status Pembayaran Peminjam</p>
+                 </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                 <div>
+                     <p><span className="font-semibold">Nama Peminjam:</span> {selectedPeminjamDetails.peminjam.nama}</p>
+                     <p><span className="font-semibold">Kode Transaksi:</span> {selectedPeminjamDetails.peminjam.kodeRekening}</p>
+                 </div>
+                 <div className="text-right">
+                     <p><span className="font-semibold">Tahun:</span> {selectedYear}</p>
+                     <p><span className="font-semibold">Tanggal Cetak:</span> {new Date().toLocaleDateString('id-ID')}</p>
+                 </div>
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 no-print">
+              {/* Summary Cards for Screen only, or we can adapt for print */}
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 print:border print:bg-white print:text-black">
+                  <p className="text-sm text-gray-400 print:text-gray-600">Total Setoran (Thn Ini)</p>
+                  <p className="text-xl font-bold text-green-400 print:text-black">{formatCurrency(selectedPeminjamDetails.summary.totalPaidForYear)}</p>
+              </div>
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 print:border print:bg-white print:text-black">
+                  <p className="text-sm text-gray-400 print:text-gray-600">Sisa Hutang (Pokok)</p>
+                  <p className="text-xl font-bold text-yellow-400 print:text-black">{formatCurrency(selectedPeminjamDetails.summary.remainingDebt)}</p>
+              </div>
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 print:border print:bg-white print:text-black">
+                  <p className="text-sm text-gray-400 print:text-gray-600">Total Pinjaman Awal</p>
+                  <p className="text-xl font-bold text-white print:text-black">{formatCurrency(selectedPeminjamDetails.peminjam.jumlahPinjaman)}</p>
+              </div>
+          </div>
+          
+          {/* Print-only Summary Section (Clean layout) */}
+          <div className="hidden print:grid grid-cols-3 gap-4 mb-6 border border-gray-300 p-4 rounded">
+             <div>
+                 <p className="font-bold">Total Setoran ({selectedYear})</p>
+                 <p>{formatCurrency(selectedPeminjamDetails.summary.totalPaidForYear)}</p>
+             </div>
+             <div>
+                 <p className="font-bold">Sisa Hutang (Pokok)</p>
+                 <p>{formatCurrency(selectedPeminjamDetails.summary.remainingDebt)}</p>
+             </div>
+              <div>
+                 <p className="font-bold">Total Pinjaman Awal</p>
+                 <p>{formatCurrency(selectedPeminjamDetails.peminjam.jumlahPinjaman)}</p>
+             </div>
+          </div>
+
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Rincian Pembayaran Bulanan ({selectedYear})</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-400">
-                <thead className="text-xs text-gray-300 uppercase bg-gray-800">
+            <h3 className="text-lg font-semibold text-white mb-4 print:text-black">Rincian Pembayaran Bulanan ({selectedYear})</h3>
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full text-sm text-left text-gray-400 print:text-black print:border-collapse print:w-full">
+                <thead className="text-xs text-gray-300 uppercase bg-gray-800 print:bg-gray-200 print:text-black">
                   <tr>
-                    <th scope="col" className="px-4 py-3">Bulan</th>
-                    <th scope="col" className="px-4 py-3">Jumlah Pinjaman</th>
-                    <th scope="col" className="px-4 py-3 text-right">Jumlah Setoran</th>
-                    <th scope="col" className="px-4 py-3 text-right">Jml. Bunga</th>
-                    <th scope="col" className="px-4 py-3 text-right">Jml. Pokok</th>
-                    <th scope="col" className="px-4 py-3 text-center">Status</th>
+                    <th scope="col" className="px-4 py-3 print:border print:border-gray-300">Bulan</th>
+                    <th scope="col" className="px-4 py-3 print:border print:border-gray-300">Jumlah Pinjaman</th>
+                    <th scope="col" className="px-4 py-3 text-right print:border print:border-gray-300">Jumlah Setoran</th>
+                    <th scope="col" className="px-4 py-3 text-right print:border print:border-gray-300">Jml. Bunga</th>
+                    <th scope="col" className="px-4 py-3 text-right print:border print:border-gray-300">Jml. Pokok</th>
+                    <th scope="col" className="px-4 py-3 text-center print:border print:border-gray-300">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedPeminjamDetails.monthlyBreakdown.map((item) => (
-                    <tr key={item.monthIndex} className="bg-gray-900 border-b border-gray-800 hover:bg-gray-800/50">
-                      <td className="px-4 py-4 font-medium text-white">{item.monthName}</td>
-                      <td className="px-4 py-4 text-blue-300">{formatCurrency(selectedPeminjamDetails.peminjam.jumlahPinjaman)}</td>
-                      <td className={`px-4 py-4 text-right font-semibold ${item.isAuto ? 'text-red-400' : 'text-green-400'}`}>{formatCurrency(item.jumlahSetoran)}</td>
-                      <td className={`px-4 py-4 text-right ${item.isAuto ? 'text-red-400' : 'text-orange-400'}`}>{formatCurrency(item.bunga)}</td>
-                      <td className={`px-4 py-4 text-right ${item.isAuto ? 'text-red-400' : 'text-sky-400'}`}>{formatCurrency(item.pokok)}</td>
-                      <td className="px-4 py-4 text-center">
+                    <tr key={item.monthIndex} className="bg-gray-900 border-b border-gray-800 hover:bg-gray-800/50 print:bg-white print:border-gray-300 print:text-black">
+                      <td className="px-4 py-4 font-medium text-white print:text-black print:border print:border-gray-300">{item.monthName}</td>
+                      <td className="px-4 py-4 text-blue-300 print:text-black print:border print:border-gray-300">{formatCurrency(selectedPeminjamDetails.peminjam.jumlahPinjaman)}</td>
+                      <td className={`px-4 py-4 text-right font-semibold ${item.isAuto ? 'text-red-400' : 'text-green-400'} print:text-black print:border print:border-gray-300`}>{formatCurrency(item.jumlahSetoran)}</td>
+                      <td className={`px-4 py-4 text-right ${item.isAuto ? 'text-red-400' : 'text-orange-400'} print:text-black print:border print:border-gray-300`}>{formatCurrency(item.bunga)}</td>
+                      <td className={`px-4 py-4 text-right ${item.isAuto ? 'text-red-400' : 'text-sky-400'} print:text-black print:border print:border-gray-300`}>{formatCurrency(item.pokok)}</td>
+                      <td className="px-4 py-4 text-center print:border print:border-gray-300">
                         {item.status === 'Di bayar' && (
-                           item.isAuto ? (
-                             <button onClick={() => handleRevertPayment(item.monthIndex, item.monthName)} className="px-3 py-1 text-xs font-bold rounded-full bg-green-500/20 text-green-300 hover:bg-red-500/40 hover:text-red-300 transition-colors">
-                               Di bayar
-                             </button>
-                           ) : (
-                             <span className="px-3 py-1 text-xs font-bold rounded-full bg-green-500/20 text-green-300 cursor-not-allowed" title="Pembayaran dari form Setoran">Di bayar</span>
-                           )
+                           <span className="no-print px-3 py-1 text-xs font-bold rounded-full bg-green-500/20 text-green-300">Di bayar</span>
                         )}
-                        {item.status === 'Tidak Bayar' && (
-                           <button onClick={() => handleMarkAsPaid(item.monthIndex, item.monthName)} className="px-3 py-1 text-xs font-bold rounded-full bg-red-500/20 text-red-300 hover:bg-green-500/40 hover:text-green-300 transition-colors">
-                             Tidak Bayar
-                           </button>
+                        {item.status === 'Di bayar' && (
+                            <span className="hidden print:inline font-bold text-black">Lunas</span>
                         )}
-                        {item.status === '-' && <span className="text-gray-500">-</span>}
+
+                        {/* Interactive buttons hidden on print, showing simplified text instead */}
+                         <div className="no-print inline-block">
+                            {item.status === 'Di bayar' && item.isAuto && (
+                                 <button onClick={() => handleRevertPayment(item.monthIndex, item.monthName)} className="px-3 py-1 text-xs font-bold rounded-full bg-green-500/20 text-green-300 hover:bg-red-500/40 hover:text-red-300 transition-colors ml-2 opacity-0 hover:opacity-100">
+                                   Batal
+                                 </button>
+                            )}
+                            {item.status === 'Tidak Bayar' && (
+                               <button onClick={() => handleMarkAsPaid(item.monthIndex, item.monthName)} className="px-3 py-1 text-xs font-bold rounded-full bg-red-500/20 text-red-300 hover:bg-green-500/40 hover:text-green-300 transition-colors">
+                                 Tidak Bayar
+                               </button>
+                            )}
+                         </div>
+                         
+                         {item.status === 'Tidak Bayar' && (
+                            <span className="hidden print:inline font-bold text-black">-</span>
+                         )}
+
+                        {item.status === '-' && <span className="text-gray-500 print:text-black">-</span>}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+             {/* Footer Signature Area for Print */}
+             <div className="hidden print:flex justify-end mt-12 mr-8">
+                  <div className="text-center">
+                      <p className="mb-16">Denpasar, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                      <p className="font-bold border-b border-black pb-1 inline-block min-w-[200px]">( ...................................................... )</p>
+                      <p className="mt-1 text-sm">Tanda Tangan Petugas</p>
+                  </div>
+              </div>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center h-64 text-center text-gray-500 border-2 border-dashed border-gray-700 rounded-lg">
+        <div className="flex flex-col items-center justify-center h-64 text-center text-gray-500 border-2 border-dashed border-gray-700 rounded-lg no-print">
           <CreditCard className="w-16 h-16 mb-4" />
           <h3 className="text-xl font-semibold text-gray-300">Pilih Peminjam</h3>
           <p>Pilih nama peminjam dari daftar di atas untuk melihat detail pembayaran.</p>

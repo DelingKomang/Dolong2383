@@ -204,7 +204,7 @@ function App() {
         return <Setoran setoranData={setoranData} peminjamData={peminjamData} onSubmit={handleSetoranSubmit} onDelete={handleSetoranDelete} onImport={handleSetoranImport}/>;
       case 'Rekap Peminjam':
         return <RekapPeminjam peminjamData={peminjamData} setoranData={setoranData} manualPayments={manualPayments} onImport={handlePeminjamImport} />;
-      case 'Data Pembayaran Peminjam':
+      case 'Status Pembayaran':
         return <DataPembayaranPeminjam peminjamData={peminjamData} setoranData={setoranData} manualPayments={manualPayments} onToggleManualPayment={handleToggleManualPayment} onImportManualPayments={handleManualPaymentsImport} />;
       case 'Saldo Akhir':
         return <SaldoAkhir bkuData={bkuData} />;
