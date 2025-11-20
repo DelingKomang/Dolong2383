@@ -3,7 +3,7 @@
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('Data Keuangan Harian')
+    .setTitle('Data Desa Tiga Likur')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo, useRef } from 'react';
 import BkpTable from '../components/bkp/BkpTable';
 import type { BkpData } from '../types';
@@ -34,12 +32,17 @@ const BukuKasPembantu: React.FC<BukuKasPembantuProps> = ({ bkpData, onSubmit, on
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  
+  // New Filters
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterYear, setFilterYear] = useState('');
 
   const itemsPerPage = 5;
 
   const filteredData = useMemo(() => {
     return bkpData.filter(item => {
         const lowercasedTerm = searchTerm.toLowerCase();
+        const itemDate = new Date(item.tanggal + 'T00:00:00');
         
         const searchTermMatch = !searchTerm || (
             (item.uraian || '').toLowerCase().includes(lowercasedTerm) ||
@@ -49,10 +52,12 @@ const BukuKasPembantu: React.FC<BukuKasPembantuProps> = ({ bkpData, onSubmit, on
         );
 
         const categoryMatch = !filterCategory || item.kategori === filterCategory;
+        const monthMatch = !filterMonth || (itemDate.getMonth() + 1).toString() === filterMonth;
+        const yearMatch = !filterYear || itemDate.getFullYear().toString() === filterYear;
 
-        return searchTermMatch && categoryMatch;
+        return searchTermMatch && categoryMatch && monthMatch && yearMatch;
     });
-  }, [bkpData, searchTerm, filterCategory]);
+  }, [bkpData, searchTerm, filterCategory, filterMonth, filterYear]);
   
   const summary = useMemo(() => {
     const totalDebet = filteredData.reduce((acc, item) => acc + item.debet, 0);
@@ -160,29 +165,34 @@ const BukuKasPembantu: React.FC<BukuKasPembantuProps> = ({ bkpData, onSubmit, on
     setImportedData(null);
   };
 
+  const uniqueYears = useMemo(() => [...new Set(bkpData.map(d => new Date(d.tanggal).getFullYear().toString()))].sort((a,b)=> Number(b)-Number(a)), [bkpData]);
+
   return (
     <div className="bg-gray-900 p-4 sm:p-6 rounded-lg shadow-xl border border-gray-800 space-y-6">
+      {/* Header Row: Title and Search */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-xl font-semibold text-white">Buku Kas Pembantu</h2>
+        <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+            type="text"
+            placeholder="Cari (Uraian, Kode...)"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+            />
+        </div>
       </div>
 
-       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-             <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                type="text"
-                placeholder="Cari (Uraian, Kode...)"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-            </div>
-            <div className="w-full sm:w-auto">
+      {/* Filters and Actions Row */}
+       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          {/* Filters Left Side - Narrow boxes */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+            <div>
                 <select
                     value={filterCategory}
                     onChange={e => setFilterCategory(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm"
                 >
                     <option value="">Semua Kategori</option>
                     {categories.map(cat => (
@@ -190,8 +200,22 @@ const BukuKasPembantu: React.FC<BukuKasPembantuProps> = ({ bkpData, onSubmit, on
                     ))}
                 </select>
             </div>
+            <div>
+               <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
+                    <option value="">Semua Bulan</option>
+                    {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('id-ID', {month: 'long'})}</option>)}
+               </select>
+            </div>
+            <div>
+               <select value={filterYear} onChange={e => setFilterYear(e.target.value)} className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm">
+                    <option value="">Semua Tahun</option>
+                    {uniqueYears.map(year => <option key={year} value={year}>{year}</option>)}
+               </select>
+            </div>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          
+          {/* Action Buttons Right Side */}
+          <div className="flex items-center gap-2 w-full xl:w-auto justify-end">
               <input type="file" ref={fileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
               <button
                 onClick={handleImportClick}
@@ -217,21 +241,21 @@ const BukuKasPembantu: React.FC<BukuKasPembantuProps> = ({ bkpData, onSubmit, on
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard 
-          title="Total Penerimaan" 
+          title="Total Penerimaan (Filtered)" 
           value={formatCurrency(summary.totalDebet)} 
           icon={ArrowUp}
           iconBgColor="bg-green-500/20"
           iconColor="text-green-400"
         />
         <StatCard 
-          title="Total Pengeluaran" 
+          title="Total Pengeluaran (Filtered)" 
           value={formatCurrency(summary.totalKredit)} 
           icon={ArrowDown}
           iconBgColor="bg-red-500/20"
           iconColor="text-red-400"
         />
         <StatCard 
-          title="Saldo Akhir" 
+          title="Saldo Akhir (Total)" 
           value={formatCurrency(summary.finalBalance)} 
           icon={Wallet}
           iconBgColor="bg-sky-500/20"

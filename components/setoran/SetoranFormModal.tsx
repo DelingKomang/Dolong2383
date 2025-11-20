@@ -36,7 +36,6 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
     
     const bunga = useMemo(() => {
         const baseBunga = selectedPeminjam?.bunga ?? 0;
-        // If months are selected, multiply bunga by the number of months. Otherwise, default to 1 month's bunga.
         const multiplier = selectedMonths.length > 0 ? selectedMonths.length : 1;
         return baseBunga * multiplier;
     }, [selectedPeminjam, selectedMonths]);
@@ -53,7 +52,6 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
             setJumlahSetoran(entryToEdit.jumlahSetoran);
             setUraian(entryToEdit.uraian);
         } else {
-            // Reset form for new entry
             setTanggal('');
             setKodeRekening('');
             setPeminjamId('');
@@ -76,8 +74,8 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
     }, []);
 
     useEffect(() => {
-        if (!entryToEdit && isOpen && tanggal) { // Only for new entries when modal is open and date is selected
-            const date = new Date(`${tanggal}T00:00:00`); // Use local timezone to avoid date shifts
+        if (!entryToEdit && isOpen && tanggal) {
+            const date = new Date(`${tanggal}T00:00:00`);
             const year = date.getFullYear().toString().slice(-2);
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const day = date.getDate().toString().padStart(2, '0');
@@ -93,7 +91,6 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
     }, [tanggal, isOpen, entryToEdit, setoranData]);
 
     useEffect(() => {
-        // Auto-update uraian based on selected months or date
         if (!entryToEdit) {
             if (selectedMonths.length > 0) {
                  const sortedMonths = selectedMonths.sort((a, b) => allMonths.indexOf(a) - allMonths.indexOf(b));
@@ -142,7 +139,7 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center backdrop-blur-sm p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl m-4 border border-gray-700 animate-fade-in-up flex flex-col max-h-[90vh]">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl m-4 border border-gray-700 animate-fade-in-up flex flex-col max-h-[95vh]">
                 <div className="flex-shrink-0 p-6 pb-4 flex justify-between items-center border-b-2 border-teal-500">
                     <h3 className="text-xl font-semibold text-white">{entryToEdit ? 'Edit Data Setoran' : 'Buat Data Setoran Baru'}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
@@ -150,14 +147,17 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
                     </button>
                 </div>
                 <div className="flex-grow overflow-y-auto p-6">
-                    <form id="setoran-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="md:col-span-2 text-right">
-                                <label htmlFor="tanggal" className="block text-sm font-medium text-gray-300 mb-1 text-left">Tanggal Setor</label>
-                                <input type="date" id="tanggal" value={tanggal} onChange={e => setTanggal(e.target.value)} className="w-full sm:w-auto bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required />
+                    <form id="setoran-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Column 1: Basic Info */}
+                        <div className="space-y-4">
+                             <h4 className="text-teal-400 font-semibold border-b border-gray-700 pb-2 mb-3">Informasi Peminjam</h4>
+                            <div>
+                                <label htmlFor="tanggal" className="block text-sm font-medium text-gray-300 mb-1">Tanggal Setor</label>
+                                <input type="date" id="tanggal" value={tanggal} onChange={e => setTanggal(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required />
                             </div>
                             <div>
-                                <label htmlFor="kodeRekening" className="block text-sm font-medium text-gray-300 mb-1">Kode Transaksi</label>
+                                <label htmlFor="kodeRekening" className="block text-sm font-medium text-gray-300 mb-1">Kode Transaksi (Auto)</label>
                                 <input type="text" id="kodeRekening" value={kodeRekening} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-gray-400 focus:outline-none" readOnly />
                             </div>
                             <div>
@@ -169,8 +169,20 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
                                     ))}
                                 </select>
                             </div>
-                            <div className="md:col-span-2">
-                                <label htmlFor="bayar-bulan" className="block text-sm font-medium text-gray-300 mb-1">Bayar bulan :</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Total Pinjaman Awal</label>
+                                <div className="bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-gray-300 font-mono text-right">
+                                    {formatCurrency(jumlahPinjaman)}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Column 2: Payment Details */}
+                        <div className="space-y-4">
+                            <h4 className="text-teal-400 font-semibold border-b border-gray-700 pb-2 mb-3">Rincian Pembayaran</h4>
+                            
+                            <div>
+                                <label htmlFor="bayar-bulan" className="block text-sm font-medium text-gray-300 mb-1">Untuk Pembayaran Bulan</label>
                                 <div className="relative" ref={monthDropdownRef}>
                                     <button
                                         type="button"
@@ -200,29 +212,40 @@ const SetoranFormModal: React.FC<SetoranFormModalProps> = ({ isOpen, onClose, on
                                     )}
                                 </div>
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Jumlah Pinjaman</label>
-                                <input type="text" value={formatCurrency(jumlahPinjaman)} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none" readOnly />
+                                <label htmlFor="jumlahSetoran" className="block text-sm font-medium text-gray-300 mb-1">Jumlah Setoran (Total)</label>
+                                <div className="relative">
+                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                                    <input 
+                                        type="number" 
+                                        id="jumlahSetoran" 
+                                        value={jumlahSetoran} 
+                                        onChange={e => setJumlahSetoran(e.target.value)} 
+                                        className="w-full bg-gray-800 border border-gray-600 rounded-md py-2 pl-10 pr-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-lg text-right" 
+                                        placeholder="0" 
+                                        required 
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1 italic capitalize text-right">{terbilangText}</p>
                             </div>
-                            <div>
-                                <label htmlFor="jumlahSetoran" className="block text-sm font-medium text-gray-300 mb-1">Jumlah Setoran</label>
-                                <input type="number" id="jumlahSetoran" value={jumlahSetoran} onChange={e => setJumlahSetoran(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="0" required />
+
+                            <div className="grid grid-cols-2 gap-4 bg-gray-700/30 p-3 rounded-lg border border-gray-700">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Alokasi Bunga</label>
+                                    <div className="text-orange-400 font-mono text-right font-semibold">{formatCurrency(bunga)}</div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Alokasi Pokok</label>
+                                    <div className="text-green-400 font-mono text-right font-semibold">{formatCurrency(pokok)}</div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Bunga (2%)</label>
-                                <input type="text" value={formatCurrency(bunga)} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none" readOnly />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Pokok</label>
-                                <input type="text" value={formatCurrency(pokok)} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none" readOnly />
-                            </div>
-                            <div className="md:col-span-2">
-                                <p className="text-xs text-gray-400 mt-1 italic capitalize">{terbilangText}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                                <label htmlFor="uraian" className="block text-sm font-medium text-gray-300 mb-1">Uraian/Keterangan</label>
-                                <textarea id="uraian" value={uraian} onChange={e => setUraian(e.target.value)} rows={2} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required autoComplete="off"></textarea>
-                            </div>
+                        </div>
+
+                        {/* Full Width Uraian */}
+                        <div className="md:col-span-2">
+                            <label htmlFor="uraian" className="block text-sm font-medium text-gray-300 mb-1">Uraian / Keterangan</label>
+                            <textarea id="uraian" value={uraian} onChange={e => setUraian(e.target.value)} rows={2} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required autoComplete="off"></textarea>
                         </div>
                     </form>
                 </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -202,7 +203,7 @@ function App() {
       case 'Setoran':
         return <Setoran setoranData={setoranData} peminjamData={peminjamData} onSubmit={handleSetoranSubmit} onDelete={handleSetoranDelete} onImport={handleSetoranImport}/>;
       case 'Rekap Peminjam':
-        return <RekapPeminjam peminjamData={peminjamData} setoranData={setoranData} manualPayments={manualPayments} />;
+        return <RekapPeminjam peminjamData={peminjamData} setoranData={setoranData} manualPayments={manualPayments} onImport={handlePeminjamImport} />;
       case 'Data Pembayaran Peminjam':
         return <DataPembayaranPeminjam peminjamData={peminjamData} setoranData={setoranData} manualPayments={manualPayments} onToggleManualPayment={handleToggleManualPayment} onImportManualPayments={handleManualPaymentsImport} />;
       case 'Saldo Akhir':

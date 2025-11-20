@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -15,23 +16,27 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activePage, setActivePage, currentUser, onLogout, onLogoutClick, onRestoreClick, onHardResetClick }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile toggle
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Desktop toggle
 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 overflow-hidden">
       <Sidebar 
         isOpen={sidebarOpen} 
         setIsOpen={setSidebarOpen} 
+        isCollapsed={sidebarCollapsed}
         activePage={activePage} 
         setActivePage={setActivePage} 
         onLogoutClick={onLogoutClick}
         onRestoreClick={onRestoreClick}
         onHardResetClick={onHardResetClick}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
         <Header 
           sidebarOpen={sidebarOpen} 
-          setSidebarOpen={setSidebarOpen} 
+          setSidebarOpen={setSidebarOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
           pageTitle={activePage}
           currentUser={currentUser}
           onLogout={onLogout}

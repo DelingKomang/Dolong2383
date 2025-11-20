@@ -1,16 +1,19 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Bell, UserCircle, LogOut } from 'lucide-react';
+import { Menu, Bell, UserCircle, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { User } from '../../types';
 
 interface HeaderProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   pageTitle: string;
   currentUser: User;
   onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen, pageTitle, currentUser, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed, pageTitle, currentUser, onLogout }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -34,14 +37,23 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen, pageTitle,
 
   return (
     <header className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-700">
-      <div className="flex items-center">
+      <div className="flex items-center gap-4">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="text-gray-400 hover:text-white lg:hidden"
         >
           <Menu className="h-6 w-6" />
         </button>
-        <h1 className="text-xl md:text-2xl font-semibold ml-4 text-white">{pageTitle}</h1>
+        {/* Desktop Toggle */}
+        <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hidden lg:flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+            {sidebarCollapsed ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
+        </button>
+
+        <h1 className="text-xl md:text-2xl font-semibold text-white">{pageTitle}</h1>
       </div>
       <div className="flex items-center space-x-4 md:space-x-6">
         <div className="hidden md:block text-sm text-gray-400">{dateString}</div>

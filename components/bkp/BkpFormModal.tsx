@@ -90,7 +90,7 @@ const BkpFormModal: React.FC<BkpFormModalProps> = ({ isOpen, onClose, onSubmit, 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center backdrop-blur-sm p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-700 animate-fade-in-up flex flex-col max-h-[90vh]">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl border border-gray-700 animate-fade-in-up flex flex-col max-h-[95vh]">
                 <div className="flex-shrink-0 p-6 pb-4 flex justify-between items-center border-b-2 border-teal-500">
                     <h3 className="text-xl font-semibold text-white">{modalTitle}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
@@ -99,53 +99,80 @@ const BkpFormModal: React.FC<BkpFormModalProps> = ({ isOpen, onClose, onSubmit, 
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-6">
-                    <form id="bkp-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                           <div className="sm:col-span-2 sm:text-right">
+                    <form id="bkp-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Column 1: Transaction Details */}
+                        <div className="space-y-4">
+                            <h4 className="text-teal-400 font-semibold border-b border-gray-700 pb-2 mb-3">Detail Transaksi</h4>
+                            <div>
                                 <label htmlFor="tanggal" className="block text-sm font-medium text-gray-300 mb-1">Tanggal</label>
-                                <input type="date" id="tanggal" value={tanggal} onChange={e => setTanggal(e.target.value)} className="w-full sm:w-auto bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required />
+                                <input type="date" id="tanggal" value={tanggal} onChange={e => setTanggal(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required />
                             </div>
                             <div>
-                                <label htmlFor="kode-rincian" className="block text-sm font-medium text-gray-300 mb-1">Kode Rincian Belanja <span className="text-gray-500">(Optional)</span></label>
-                                <input type="text" id="kode-rincian" value={kode} onChange={e => setKode(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" autoComplete="off" />
-                            </div>
-                            <div>
-                                <label htmlFor="bukti" className="block text-sm font-medium text-gray-300 mb-1">Kode Transaksi</label>
+                                <label htmlFor="bukti" className="block text-sm font-medium text-gray-300 mb-1">Kode Transaksi (Auto)</label>
                                 <input type="text" id="bukti" value={bukti} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-gray-400 focus:outline-none" readOnly />
                             </div>
+                             <div>
+                                <label htmlFor="kode-rincian" className="block text-sm font-medium text-gray-300 mb-1">Kode Rincian Belanja <span className="text-gray-500">(Opsional)</span></label>
+                                <input type="text" id="kode-rincian" value={kode} onChange={e => setKode(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" autoComplete="off" placeholder="Contoh: 5.1.2.01..." />
+                            </div>
                         </div>
-                         <div>
+
+                         {/* Column 2: Amount & Category */}
+                         <div className="space-y-4">
+                            <h4 className="text-teal-400 font-semibold border-b border-gray-700 pb-2 mb-3">Keuangan & Kategori</h4>
+                            <div>
+                                <label htmlFor="kategori-bkp" className="block text-sm font-medium text-gray-300 mb-1">Kategori</label>
+                                <input
+                                    type="text"
+                                    id="kategori-bkp"
+                                    list="kategori-list-bkp"
+                                    value={kategori}
+                                    onChange={e => setKategori(e.target.value)}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                    placeholder="Pilih atau ketik kategori baru"
+                                    required
+                                    autoComplete="off"
+                                />
+                                <datalist id="kategori-list-bkp">
+                                    {categories.map(cat => <option key={cat} value={cat} />)}
+                                </datalist>
+                            </div>
+
+                            <div className="bg-gray-700/30 p-3 rounded-md border border-gray-700">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label htmlFor="amount" className="block text-sm font-medium text-gray-300">Nominal</label>
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-xs text-gray-400 cursor-pointer">Debet (Masuk)</label>
+                                        <div 
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 cursor-pointer ${isKredit ? 'bg-red-600' : 'bg-green-600'}`}
+                                            onClick={() => setIsKredit(!isKredit)}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isKredit ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </div>
+                                        <label className="text-xs text-gray-400 cursor-pointer">Kredit (Keluar)</label>
+                                    </div>
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                                    <input 
+                                        type="number" 
+                                        id="amount" 
+                                        value={amount} 
+                                        onChange={e => setAmount(e.target.value)} 
+                                        className="w-full bg-gray-800 border border-gray-600 rounded-md py-2 pl-10 pr-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-lg text-right" 
+                                        placeholder="0" 
+                                        required 
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2 italic capitalize text-right">{terbilangText}</p>
+                            </div>
+                        </div>
+
+                        {/* Full Width Uraian */}
+                        <div className="md:col-span-2">
                             <label htmlFor="uraian" className="block text-sm font-medium text-gray-300 mb-1">Uraian Transaksi</label>
-                            <textarea id="uraian" value={uraian} onChange={e => setUraian(e.target.value)} rows={3} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required placeholder="Contoh: Belanja Pulpen Boxy 1 Lusin" autoComplete="off"></textarea>
-                        </div>
-
-                        <div>
-                            <label htmlFor="kategori-bkp" className="block text-sm font-medium text-gray-300 mb-1">Kategori</label>
-                            <input
-                                type="text"
-                                id="kategori-bkp"
-                                list="kategori-list-bkp"
-                                value={kategori}
-                                onChange={e => setKategori(e.target.value)}
-                                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                placeholder="Pilih atau ketik kategori baru"
-                                required
-                                autoComplete="off"
-                            />
-                            <datalist id="kategori-list-bkp">
-                                {categories.map(cat => <option key={cat} value={cat} />)}
-                            </datalist>
-                        </div>
-
-                        <div className="flex items-center">
-                            <input id="isKredit" type="checkbox" checked={isKredit} onChange={() => setIsKredit(!isKredit)} className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
-                            <label htmlFor="isKredit" className="ml-2 block text-sm text-gray-300">Tandai sebagai Kredit (Pengeluaran)</label>
-                        </div>
-
-                        <div>
-                            <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-1">{isKredit ? 'Jumlah Kredit' : 'Jumlah Debet'}</label>
-                            <input type="number" id="amount" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="0" required />
-                            <p className="text-xs text-gray-400 mt-1 italic capitalize">{terbilangText}</p>
+                            <textarea id="uraian" value={uraian} onChange={e => setUraian(e.target.value)} rows={3} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500" required placeholder="Jelaskan detail transaksi di sini..." autoComplete="off"></textarea>
                         </div>
                     </form>
                 </div>

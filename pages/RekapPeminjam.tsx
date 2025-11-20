@@ -1,16 +1,21 @@
-import React, { useMemo, useState, useEffect } from 'react';
+
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import type { PeminjamData, SetoranData, RekapData, ManualPayment } from '../types';
 import RekapPeminjamTable from '../components/rekap/RekapPeminjamTable';
 import MissedMonthsModal from '../components/rekap/MissedMonthsModal';
 import PaidMonthsModal from '../components/rekap/PaidMonthsModal';
-import { BookUser, Download } from 'lucide-react';
-import { exportToExcel } from '../utils/fileHandlers';
+import { BookUser, Download, Upload, Search } from 'lucide-react';
+import { exportToExcel, importFromExcel } from '../utils/fileHandlers';
 import Notification from '../components/shared/Notification';
+import { v4 as uuidv4 } from 'uuid';
+import { safeFormatDateForImport } from '../utils/formatters';
+import ConfirmationModal from '../components/shared/ConfirmationModal';
 
 interface RekapPeminjamProps {
   peminjamData: PeminjamData[];
   setoranData: SetoranData[];
   manualPayments: ManualPayment[];
+  onImport: (data: PeminjamData[]) => void;
 }
 
 const indonesianMonthsMap: { [key: string]: number } = {
@@ -43,12 +48,17 @@ const getPaidMonthIndices = (setoran: SetoranData): number[] => {
 };
 
 
-const RekapPeminjam: React.FC<RekapPeminjamProps> = ({ peminjamData, setoranData, manualPayments }) => {
+const RekapPeminjam: React.FC<RekapPeminjamProps> = ({ peminjamData, setoranData, manualPayments, onImport }) => {
   const [selectedPeminjamForMissed, setSelectedPeminjamForMissed] = useState<RekapData | null>(null);
   const [isMissedModalOpen, setIsMissedModalOpen] = useState(false);
   const [selectedPeminjamForPaid, setSelectedPeminjamForPaid] = useState<RekapData | null>(null);
   const [isPaidModalOpen, setIsPaidModalOpen] = useState(false);
   const [showExportSuccess, setShowExportSuccess] = useState(false);
+  
+  const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+  const [importedData, setImportedData] = useState<PeminjamData[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [filterName, setFilterName] = useState('');
 
   const uniqueYears = useMemo(() => {
     const years = new Set<string>();
@@ -73,7 +83,10 @@ const RekapPeminjam: React.FC<RekapPeminjamProps> = ({ peminjamData, setoranData
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth(); // 0-11
 
-    return peminjamData.map(peminjam => {
+    return peminjamData.filter(p => {
+        if (!filterName) return true;
+        return p.nama.toLowerCase().includes(filterName.toLowerCase());
+    }).map(peminjam => {
       // Lifetime totals for financial aggregation (from formal Setoran records only)
       const financialSetorans = setoranData.filter(s => s.peminjamId === peminjam.id);
       const totalSetoran = financialSetorans.reduce((acc, s) => acc + s.jumlahSetoran, 0);
@@ -144,7 +157,7 @@ const RekapPeminjam: React.FC<RekapPeminjamProps> = ({ peminjamData, setoranData
         paidMonths,
       };
     });
-  }, [peminjamData, setoranData, manualPayments, selectedYear]);
+  }, [peminjamData, setoranData, manualPayments, selectedYear, filterName]);
   
   const handleShowMissedMonths = (rekap: RekapData) => {
     if (rekap.jumlahTidakBayar > 0) {
@@ -178,31 +191,95 @@ const RekapPeminjam: React.FC<RekapPeminjamProps> = ({ peminjamData, setoranData
     setShowExportSuccess(true);
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+        const rawData = await importFromExcel(file);
+        const formattedData: PeminjamData[] = rawData.map((row: any) => ({
+            id: uuidv4(),
+            tanggal: safeFormatDateForImport(row['Tanggal']),
+            kodeRekening: String(row['Kode Transaksi'] || row['Kode Rekening'] || ''),
+            nama: String(row['Nama Peminjam'] || ''),
+            jumlahPinjaman: Number(row['Jumlah Pinjaman'] || 0),
+            bunga: Number(row['Bunga'] || (Number(row['Jumlah Pinjaman'] || 0) * 0.02)),
+            status: row['Status'] === 'Lunas' ? 'Lunas' : 'Belum Lunas',
+            uraian: String(row['Uraian'] || ''),
+        }));
+        setImportedData(formattedData);
+        setIsImportConfirmOpen(true);
+    } catch (error) {
+        console.error("Error importing file:", error);
+        alert("Gagal mengimpor file. Pastikan format file benar.");
+    } finally {
+       if(fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const confirmImport = () => {
+    if (importedData) {
+        onImport(importedData);
+    }
+    setIsImportConfirmOpen(false);
+    setImportedData(null);
+  };
+
   return (
     <div className="bg-gray-900 p-4 sm:p-6 rounded-lg shadow-xl border border-gray-800 space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-3">
           <BookUser className="h-8 w-8 text-teal-400" />
           <h2 className="text-xl font-semibold text-white">Rekapitulasi Peminjam</h2>
         </div>
-         <div className="flex items-center gap-2">
-           <label htmlFor="year-filter-rekap" className="text-sm text-gray-400">Tahun:</label>
-           <select 
-                id="year-filter-rekap"
-                value={selectedYear} 
-                onChange={e => setSelectedYear(e.target.value)} 
-                className="bg-gray-800 border border-gray-700 rounded-md py-1 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-            >
-                {uniqueYears.map(year => <option key={year} value={year}>{year}</option>)}
-           </select>
-            <button
-              onClick={handleExportExcel}
-              disabled={rekapData.length === 0}
-              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-1.5 px-3 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download size={16} />
-              <span>Excel</span>
-            </button>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+             <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                type="text"
+                placeholder="Cari Nama Peminjam..."
+                value={filterName}
+                onChange={e => setFilterName(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md py-1.5 pl-10 pr-4 text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+            </div>
+            
+             <div className="flex items-center gap-2 w-full sm:w-auto">
+               <label htmlFor="year-filter-rekap" className="text-sm text-gray-400 whitespace-nowrap">Tahun:</label>
+               <select 
+                    id="year-filter-rekap"
+                    value={selectedYear} 
+                    onChange={e => setSelectedYear(e.target.value)} 
+                    className="bg-gray-800 border border-gray-700 rounded-md py-1 px-3 text-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                >
+                    {uniqueYears.map(year => <option key={year} value={year}>{year}</option>)}
+               </select>
+            </div>
+
+            <div className="flex gap-2 w-full sm:w-auto">
+                <input type="file" ref={fileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
+                <button
+                  onClick={handleImportClick}
+                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg transition-colors duration-300 flex-1 sm:flex-none"
+                >
+                  <Upload size={16} />
+                  <span>Import</span>
+                </button>
+
+                <button
+                  onClick={handleExportExcel}
+                  disabled={rekapData.length === 0}
+                  className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-1.5 px-3 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                >
+                  <Download size={16} />
+                  <span>Excel</span>
+                </button>
+            </div>
         </div>
       </div>
       <p className="text-gray-400">Ringkasan aktivitas setoran untuk setiap peminjam selama tahun {selectedYear}.</p>
@@ -224,6 +301,16 @@ const RekapPeminjam: React.FC<RekapPeminjamProps> = ({ peminjamData, setoranData
         onClose={() => setIsPaidModalOpen(false)}
         rekapData={selectedPeminjamForPaid}
       />
+
+      <ConfirmationModal
+        isOpen={isImportConfirmOpen}
+        onClose={() => setIsImportConfirmOpen(false)}
+        onConfirm={confirmImport}
+        title="Konfirmasi Import"
+        message={`Anda akan mengimpor ${importedData?.length || 0} baris data peminjam. Tindakan ini akan menambahkan data baru. Lanjutkan?`}
+        confirmText="Ya, Import"
+      />
+
       <Notification
         message="Data rekapitulasi berhasil di-export!"
         show={showExportSuccess}
